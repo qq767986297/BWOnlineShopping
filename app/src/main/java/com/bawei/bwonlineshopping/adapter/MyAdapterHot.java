@@ -9,10 +9,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bawei.bwonlineshopping.R;
-import com.bawei.bwonlineshopping.bean.BannerBean;
 import com.bawei.bwonlineshopping.bean.ListBean;
+import com.bawei.bwonlineshopping.bean.XRecyBean;
 import com.bumptech.glide.Glide;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,18 +22,18 @@ import java.util.List;
  * Description:
  */
 public class MyAdapterHot  extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    Context context;
+    Context mcontext;
     List<ListBean.ResultBean.RxxpBean.CommodityListBean> list;
 
-    public MyAdapterHot(Context context, List<ListBean.ResultBean.RxxpBean.CommodityListBean> list) {
-        this.context = context;
+    public MyAdapterHot(Context mcontext, List<ListBean.ResultBean.RxxpBean.CommodityListBean> list) {
+        this.mcontext = mcontext;
         this.list = list;
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = View.inflate(context, R.layout.itemone, null);
+        View view = View.inflate(mcontext, R.layout.itemone, null);
         ViewHolder holder = new ViewHolder(view);
         return holder;
     }
@@ -42,10 +43,10 @@ public class MyAdapterHot  extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         ListBean.ResultBean.RxxpBean.CommodityListBean bean = list.get(position);
         String name = bean.getCommodityName();
         String masterPic = bean.getMasterPic();
-        int price = bean.getPrice();
+       // int price = bean.getPrice();
       //  ((ViewHolder)holder).tv.setText(" $ "+price+".00");
         ((ViewHolder)holder).tt.setText(name);
-        Glide.with(context).load(masterPic).into(((ViewHolder)holder).iv);
+        Glide.with(mcontext).load(masterPic).into(((ViewHolder)holder).iv);
 
     }
 

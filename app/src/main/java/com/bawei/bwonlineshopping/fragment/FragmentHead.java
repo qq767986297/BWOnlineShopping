@@ -1,18 +1,25 @@
 package com.bawei.bwonlineshopping.fragment;
 
-import android.content.ContentValues;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.support.v4.view.ViewPager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.PopupWindow;
+import android.widget.Toast;
+
 
 import com.bawei.bwonlineshopping.R;
+import com.bawei.bwonlineshopping.adapter.FirstAdapter;
 import com.bawei.bwonlineshopping.adapter.MyAdapterFashoin;
 import com.bawei.bwonlineshopping.adapter.MyAdapterHot;
 import com.bawei.bwonlineshopping.base.BaseFragment;
@@ -21,13 +28,14 @@ import com.bawei.bwonlineshopping.bean.BannerBean;
 import com.bawei.bwonlineshopping.bean.DataBean;
 import com.bawei.bwonlineshopping.bean.LinBanner;
 import com.bawei.bwonlineshopping.bean.ListBean;
+import com.bawei.bwonlineshopping.bean.SearchBean;
+import com.bawei.bwonlineshopping.bean.ShopCarBean;
+import com.bawei.bwonlineshopping.bean.XRecyBean;
 import com.bawei.bwonlineshopping.contract.IHomeContract;
-import com.bawei.bwonlineshopping.customview.CustomViewGroup;
-import com.bawei.bwonlineshopping.customview.FlowLayout;
 import com.bawei.bwonlineshopping.presenter.HomePagePresenter;
-import com.bawei.bwonlineshopping.sqlite.DBHelper;
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
+import com.jcodecraeer.xrecyclerview.XRecyclerView;
 import com.stx.xhb.xbanner.XBanner;
 
 import java.util.ArrayList;
@@ -38,17 +46,23 @@ import java.util.List;
  * Author: 王冠华
  * Description:
  */
-public class FragmentHead extends BaseFragment implements IHomeContract.IView {
+public class FragmentHead extends BaseFragment implements IHomeContract.IView, View.OnClickListener {
 
     private XBanner xb;
     private RecyclerView rv_hot;
     private RecyclerView rv_fashion;
+    private RecyclerView rv_life;
     private ArrayList<LinBanner> beans;
-    private CustomViewGroup cvg;
-    private FlowLayout fl;
     private SQLiteDatabase db;
     ArrayList<DataBean.Data> list = new ArrayList<>();
     private BasePresenter presenter;
+    private ImageView iv;
+    private HomePagePresenter presenter1;
+    private RecyclerView rv;
+    private int mpage=1;
+    ArrayList<XRecyBean> data = new ArrayList<>();
+    private MyAdapterHot hot;
+
 
     @Override
     protected BasePresenter initPresenter() {
@@ -58,6 +72,7 @@ public class FragmentHead extends BaseFragment implements IHomeContract.IView {
     @Override
     protected int getLayout() {
         return R.layout.head;
+
     }
 
     @Override
@@ -65,98 +80,43 @@ public class FragmentHead extends BaseFragment implements IHomeContract.IView {
         xb = view.findViewById(R.id.xb);
         rv_hot = view.findViewById(R.id.rv_hot);
         rv_fashion = view.findViewById(R.id.rv_fashion);
-        cvg = view.findViewById(R.id.cvg);
-        fl = view.findViewById(R.id.fl);
+        rv_life = view.findViewById(R.id.rv_life);
+        iv = view.findViewById(R.id.second);
+
+
+
     }
+
 
     @Override
     protected void initData() {
-        String bannerpath="http://mobile.bwstudent.com/small/commodity/v1/bannerShow";
-        String listpath="http://mobile.bwstudent.com/small/commodity/v1/commodityList";
+//        String bannerpath="http://mobile.bwstudent.com/small/commodity/v1/bannerShow";
+//        String listpath="http://mobile.bwstudent.com/small/commodity/v1/commodityList";
+//        String url="http://mobile.bwstudent.com/small/commodity/v1/findCommodityByKeyword";
+//        url=url+"?keyword="+"1"+"&page="+mpage+"&count=10";
         presenter = getPresenter();
-//        if(presenter!=null&&presenter instanceof BasePresenter){
-//            ((HomePagePresenter)presenter).getBanner(bannerpath);
-//            ((HomePagePresenter)presenter).getListData(listpath);
-//        }
-        HomePagePresenter presenter1 = new HomePagePresenter(this);
-        presenter1.getListData(listpath);
-        presenter1.getBanner(bannerpath);
+        if(presenter!=null&& presenter instanceof IHomeContract.IPresenter){
+            ((IHomeContract.IPresenter)presenter).onBanner();
+            ((IHomeContract.IPresenter)presenter).onList();
 
-        //创建数据库
-        DBHelper helper = new DBHelper(getContext());
-        db = helper.getWritableDatabase();
-        Cursor cursor = db.query("shop", null, null, null, null, null, null);
-        while(cursor.moveToNext()) {
-            DataBean.Data data = new DataBean.Data();
-            String name=cursor.getString(cursor.getColumnIndex("name"));
-            data.setName(name);
-           list.add(data);
         }
-        cvg.setOnClick(new CustomViewGroup.OnSouClickListener() {
-            @Override
-            public void onSou(String str) {
-                String url = "http://mobile.bwstudent.com/small/commodity/v1/findCommodityByKeyword";
-                url = url + "?keyword=" + str +"&page=1&count=5";
-                Log.i("eee",""+url);
-                if(presenter !=null && presenter instanceof HomePagePresenter){ ;
-                    ((HomePagePresenter) presenter).getSerach(url);
-                }
-                db.delete("shop",null,null);
-                DataBean.Data data = new DataBean.Data();
-                data.setName(str);
-                list.add(data);
-
-
-                for(int i=0;i<list.size();i++){
-
-                    DataBean.Data data1 = list.get(i);
-                    String name = data1.getName();
-                    ContentValues values = new ContentValues();
-                    values.put("name", name);
-                    db.insert("shop", null, values);
-                }
-                list.clear();
-                Cursor cursor = db.query("shop", null, null, null, null, null, null);
-                while (cursor.moveToNext()){
-                    DataBean.Data data1 = new DataBean.Data();
-                    String name = cursor.getString(cursor.getColumnIndex("name"));
-                    data1.setName(name);
-                    list.add(data1);
-                }
-                fl.removeAllViews();
-                for (int i=0;i<list.size();i++){
-                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                    layoutParams.setMargins(10,5,10,5);
-                    TextView view = new TextView(getContext());
-                    view.setPadding(20, 10, 20, 10);
-                    view.setText(list.get(i).getName());
-                    view.setLayoutParams(layoutParams);
-                    fl.addView(view, layoutParams);
-                }
-            }
-        });
+//        iv.setOnClickListener(this);
     }
 
     @Override
     public void onSuccess(String str) {
-//        Log.i("xxx",str);
 //        Gson gson = new Gson();
-//        BannerBean bean = gson.fromJson(str,BannerBean.class);
-//        final List<BannerBean.ResultBean> result = bean.getResult();
-//        BannerBean bannerBean = new BannerBean();
-//        beans = new ArrayList<>();
-//
-//        for(int i=0;i<result.size();i++){
-//            LinBanner banner = new LinBanner(result.get(i).getImageUrl());
-//            beans.add(banner);
-//        }
-//        xb.setBannerData(beans);
+//        BannerBean bannerBean = gson.fromJson(str, BannerBean.class);
+//        final List<BannerBean.ResultBean> result = bannerBean.getResult();
+//        xb.setBannerData(result);
+//        Log.i("mmmm",result.size()+"");
 //        xb.loadImage(new XBanner.XBannerAdapter() {
 //            @Override
 //            public void loadBanner(XBanner banner, Object model, View view, int position) {
-//                LinBanner banner1 = beans.get(position);
-//                String url = banner1.getUrl();
-//                Glide.with(getContext()).load(url).into((ImageView) view);
+//                BannerBean.ResultBean bean = result.get(position);
+//                String imageUrl = bean.getImageUrl();
+//                Log.i("aaaa",""+imageUrl);
+//                Glide.with(getContext()).load(result.get(position).getImageUrl()).into((ImageView) view);
 //            }
 //        });
     }
@@ -167,30 +127,108 @@ public class FragmentHead extends BaseFragment implements IHomeContract.IView {
     }
 
     @Override
-    public void onListSuccess(String str) {
-//        Gson gson = new Gson();
-//        ListBean bean = gson.fromJson(str, ListBean.class);
-//        ListBean.ResultBean result = bean.getResult();
-//        ListBean.ResultBean.RxxpBean rxxp = result.getRxxp();
-//        List<ListBean.ResultBean.RxxpBean.CommodityListBean> hotlist = rxxp.getCommodityList();
-//        LinearLayoutManager manager = new LinearLayoutManager(getContext(), RecyclerView.HORIZONTAL, false);
-//        rv_hot.setLayoutManager(manager);
-//        MyAdapterHot hot = new MyAdapterHot(getContext(), hotlist);
-//        rv_hot.setAdapter(hot);
-    }
-
-    @Override
-    public void onListFailure(String str) {
+    public void onGetBanner(final BannerBean bannerBean) {
+       xb.setBannerData(bannerBean.getResult());
+       xb.loadImage(new XBanner.XBannerAdapter() {
+           @Override
+           public void loadBanner(XBanner banner, Object model, View view, int position) {
+               List<BannerBean.ResultBean> result = bannerBean.getResult();
+               BannerBean.ResultBean bean = result.get(position);
+               String imageUrl = bean.getImageUrl();
+               Log.i("xxx",imageUrl);
+               Glide.with(getActivity()).load(imageUrl).into((ImageView) view);
+           }
+       });
 
     }
 
     @Override
-    public void getSerachSuccess(String str) {
+    public void onGetList(ListBean listBean) {
+        ListBean.ResultBean result = listBean.getResult();
+        ListBean.ResultBean.RxxpBean rxxp = result.getRxxp();
+        List<ListBean.ResultBean.RxxpBean.CommodityListBean> rxlist = rxxp.getCommodityList();
+        LinearLayoutManager manager1 = new LinearLayoutManager(getActivity(), RecyclerView.HORIZONTAL, false);
+        rv_hot.setLayoutManager(manager1);
+        MyAdapterHot hot = new MyAdapterHot(getActivity(), rxlist);
+        rv_hot.setAdapter(hot);
+        ListBean.ResultBean.MlssBean mlss = result.getMlss();
+        List<ListBean.ResultBean.MlssBean.CommodityListBeanXX> mllist = mlss.getCommodityList();
+        LinearLayoutManager manager2 = new LinearLayoutManager(getActivity(), RecyclerView.VERTICAL, false);
+        rv_fashion.setLayoutManager(manager2);
+        MyAdapterFashoin fashoin = new MyAdapterFashoin(getActivity(), mllist);
+        rv_fashion.setAdapter(fashoin);
+        GridLayoutManager manager3 = new GridLayoutManager(getActivity(), 2);
+        rv_life.setLayoutManager(manager3);
+        MyAdapterHot hott = new MyAdapterHot(getActivity(), rxlist);
+        rv_life.setAdapter(hott);
+    }
+
+    @Override
+    public void onShopCarSuccess(ShopCarBean shopCarBean) {
 
     }
 
     @Override
-    public void getSerachErr(String str) {
+    public void onShopCarFailure(String str) {
 
+    }
+
+
+    private void initPopWindow(){
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.popitem, null, false);
+        rv = view.findViewById(R.id.second_rv);
+        LinearLayoutManager manager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        rv.setLayoutManager(manager);
+        ArrayList<String> list = new ArrayList<>();
+        list.add("男装");
+        list.add("女装");
+        list.add("女鞋");
+        list.add("T恤");
+        list.add("美妆");
+        list.add("手机");
+        FirstAdapter adapter = new FirstAdapter(getContext(), list);
+        rv.setAdapter(adapter);
+        view.setAlpha(0.5f);
+        PopupWindow popupWindow = new PopupWindow(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popupWindow.setAnimationStyle(R.anim.anim_pop);
+        popupWindow.setTouchable(true);
+        popupWindow.setTouchInterceptor(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return false;
+            }
+        });
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
+        popupWindow.showAsDropDown(view,0,150);
+        adapter.setOnItemClickLinster(new FirstAdapter.setOnItemClickLinster() {
+            @Override
+            public void onClick(int posion) {
+                Toast.makeText(getContext(), "点击了", Toast.LENGTH_SHORT).show();
+                View view1 = LayoutInflater.from(getContext()).inflate(R.layout.manpop, null, false);
+                view1.setAlpha(0.8f);
+                PopupWindow popupWindow1 = new PopupWindow(view1, ViewPager.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+                popupWindow1.setAnimationStyle(R.anim.anim_pop);
+
+                popupWindow1.setTouchable(true);
+                popupWindow1.setTouchInterceptor(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        return false;
+                    }
+                });
+                popupWindow1.setBackgroundDrawable(new ColorDrawable(Color.GRAY));
+                popupWindow1.showAsDropDown(view1,0,350);
+            }
+        });
+    }
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+        switch (id){
+            case R.id.second:
+                Toast.makeText(getContext(), "点击了", Toast.LENGTH_SHORT).show();
+                    initPopWindow();
+                break;
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.bawei.bwonlineshopping.utils;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -7,6 +8,9 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.bawei.bwonlineshopping.base.App;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Time: 2020/3/3
@@ -39,6 +43,27 @@ public class VolleyUtils {
                 iCallBack.onFailure(error.getMessage());
             }
         });
+        queue.add(stringRequest);
+    }
+    //post
+    public void doPost(String url, final HashMap<String,String>map, final ICallBack iCallBack){
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
+            @Override
+            public void    onResponse(String response) {
+                iCallBack.onSuccess(response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                iCallBack.onFailure(error.getMessage());
+            }
+        }) {
+            @Override
+            protected Map<String, String> getParams() {
+                return map;
+            }
+
+        };
         queue.add(stringRequest);
     }
     //创建接口
